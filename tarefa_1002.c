@@ -1,6 +1,7 @@
-/*  Nome: Moises Amorim Vieira
-    Matricula: tic370100277
 
+/*  
+    Nome: Moises Amorim Vieira
+    Matricula: tic370100277
 */
 
 #include <stdio.h>
@@ -12,6 +13,7 @@
 #include "lib/ssd1306.h"
 #include "lib/font.h"
 
+// Definindo constantes para pinos, endereço I2C e dimensões da tela OLED
 #define I2C_PORT i2c1
 #define I2C_SDA 14
 #define I2C_SCL 15
@@ -29,6 +31,7 @@
 #define LED_GREEN 12
 #define LED_BLUE 13
 
+// Função para inicializar o PWM em um GPIO
 uint pwm_init_gpio(uint gpio, uint wrap) {
     gpio_set_function(gpio, GPIO_FUNC_PWM);
     uint slice_num = pwm_gpio_to_slice_num(gpio);
@@ -37,23 +40,25 @@ uint pwm_init_gpio(uint gpio, uint wrap) {
     return slice_num;
 }
 
+// Função para atualizar a tela OLED
 void update_oled_display(ssd1306_t* ssd, int x, int y, bool thick_border) {
-    ssd1306_fill(ssd, false);
-    ssd1306_rect(ssd, x, y, 8, 8, true, false);
+    ssd1306_fill(ssd, false); // Limpa a tela OLED
+    ssd1306_rect(ssd, x, y, 8, 8, true, false); // Desenha um quadrado na posição x, y
     if (thick_border) {
         for (int i = 0; i < 3; i++) {
-            ssd1306_rect(ssd, i, i, 127 - 2 * i, 63 - 2 * i, true, false);
+            ssd1306_rect(ssd, i, i, 127 - 2 * i, 63 - 2 * i, true, false); // Desenha uma borda grossa
         }
     } else {
-        ssd1306_rect(ssd, 0, 0, 127, 63, true, false);
+        ssd1306_rect(ssd, 0, 0, 127, 63, true, false); // Desenha uma borda fina
     }
-    ssd1306_send_data(ssd);
+    ssd1306_send_data(ssd); // Envia os dados para a tela OLED
 }
 
 int main() {
-    stdio_init_all();
-    sleep_ms(2000);
+    stdio_init_all(); // Inicializa o I/O padrão
+    sleep_ms(2000); // Espera por 2 segundos
 
+    // Inicializa e configura os pinos de entrada e saída
     gpio_init(JOYSTICK_PB);
     gpio_set_dir(JOYSTICK_PB, GPIO_IN);
     gpio_pull_up(JOYSTICK_PB);
@@ -74,6 +79,7 @@ int main() {
     gpio_set_dir(LED_BLUE, GPIO_OUT);
     gpio_put(LED_BLUE, false);
 
+    // Inicializa a comunicação I2C e configura o display OLED
     i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -86,6 +92,7 @@ int main() {
     ssd1306_fill(&ssd, false);
     ssd1306_send_data(&ssd);
 
+    // Inicializa os ADCs (conversores analógicos para digitais)
     adc_init();
     adc_gpio_init(VRX_PIN);
     adc_gpio_init(VRY_PIN);
@@ -100,15 +107,19 @@ int main() {
     int square_x = WIDTH / 2 - 4;
     int square_y = HEIGHT / 2 - 4;
 
+    // Loop principal
     while (true) {
+        // Leitura dos valores do joystick
         adc_select_input(0);
         adc_value_x = adc_read();
         adc_select_input(1);
         adc_value_y = adc_read();
 
+        // Mapeia os valores do joystick para a posição do quadrado na tela
         int new_x = adc_value_x * (WIDTH - 8) / 4095;
         int new_y = adc_value_y * (HEIGHT - 8) / 4095;
 
+        // Verifica se a posição do quadrado mudou
         if (new_x != square_x || new_y != square_y) {
             leds_enabled = true;
             square_x = new_x;
@@ -117,6 +128,7 @@ int main() {
             leds_enabled = false;
         }
 
+        // Atualiza os LEDs com base nos valores do joystick
         if (leds_enabled) {
             pwm_set_gpio_level(LED_RED, abs(adc_value_x - 2048) * 2);
             pwm_set_gpio_level(LED_BLUE, abs(adc_value_y - 2048) * 2);
@@ -125,6 +137,7 @@ int main() {
             pwm_set_gpio_level(LED_BLUE, 0);
         }
 
+        // Verifica o estado do botão A
         bool a_state = !gpio_get(BOTAO_A);
         if (a_state) {
             leds_enabled = false;
@@ -134,6 +147,7 @@ int main() {
             sleep_ms(300);
         }
 
+        // Verifica o estado do botão do joystick
         bool pb_state = !gpio_get(JOYSTICK_PB);
         if (pb_state) {
             thick_border = !thick_border;
@@ -141,9 +155,11 @@ int main() {
             sleep_ms(300);
         }
 
+        // Atualiza a tela OLED
         update_oled_display(&ssd, square_x, square_y, thick_border);
 
         printf("VRX: %u, VRY: %u, PB: %d, A: %d\n", adc_value_x, adc_value_y, pb_state, a_state);
         sleep_ms(100);
     }
 }
+
