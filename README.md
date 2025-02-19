@@ -79,7 +79,7 @@ Vídeo de demonstração: Deve ser produzido um vídeo de até 2 minutos, conten
 <figcaption>
 
 
-**Figura 1** - Demo do Projeto no Youtube.com - Acessível em: https://www.youtube.com/watch?v=r36ZLegUvCY
+**Figura 1** - Demo do Projeto no Youtube.com - Acessível em: https://www.youtube.com/watch?v=OHDCXNDqpP8
     </figcaption>
   </figure>
 </div>
